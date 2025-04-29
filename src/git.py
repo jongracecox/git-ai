@@ -1,0 +1,43 @@
+import subprocess
+import sys
+
+from loguru import logger
+from sh import ErrorReturnCode_1, ErrorReturnCode_128, git
+
+git = git.bake("--no-pager")
+
+
+def get_git_changes():
+    """Get git staged changes."""
+    logger.debug("Getting git staged changes")
+    return git("diff", "--cached")
+
+
+def commit_changes(commit_message):
+    """Commit changes with the given message."""
+    logger.info("Committing changes")
+    try:
+        # Use _fg=True to push the execution to the foreground to
+        # allow the user to see pre-commit output.
+        git("commit", "-m", commit_message, _fg=True)
+    except ErrorReturnCode_1:
+        sys.exit(1)
+
+
+def hello(a: str):
+    print(a)
+
+
+def get_last_commit_messages(num: int) -> str:
+    """Get the last n commit messages."""
+    logger.debug(f"Getting the last {num} commit messages")
+    try:
+        return git("log", "-n", str(num), "--pretty=full")
+    except ErrorReturnCode_128:
+        logger.error("Error getting last commit messages")
+        return ""
+
+
+def show_diff():
+    """Show the git diff."""
+    subprocess.call("git diff --cached", shell=True)
