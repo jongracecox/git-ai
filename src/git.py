@@ -44,6 +44,19 @@ def show_diff():
     subprocess.call("git diff --cached", shell=True)
 
 
+def git_has_staged_changes() -> bool:
+    """Check if there are any staged changes in the git repository."""
+    try:
+        changes = git("diff", "--cached", "--exit-code")
+        return bool(changes.strip())
+    except ErrorReturnCode_1:
+        # If there are staged changes, git will return a non-zero exit code
+        return True
+    except ErrorReturnCode_128 as e:
+        logger.error("Error checking for staged changes")
+        raise RuntimeError("Unable to check for staged changes. Are you in a git repository?") from e
+
+
 def get_git_project_root() -> Path:
     """Get the root directory ofPath the git project."""
     try:

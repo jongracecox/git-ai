@@ -17,6 +17,7 @@ from git import (
     get_git_changes,
     get_last_commit_messages,
     show_diff,
+    git_has_staged_changes,
 )
 from pre_commit import run_pre_commit
 
@@ -112,6 +113,12 @@ class UserChoice(Enum):
 def main(dry_run: bool = False):
     """Main function."""
 
+    print(f"{Fore.blue}Git AI{Style.reset}")
+
+    if not git_has_staged_changes():
+        print(f"{Fore.red}No staged changes found. Exiting.{Style.reset}")
+        sys.exit(0)
+
     if RUN_PRE_COMMIT:
         run_pre_commit()
 
@@ -121,6 +128,9 @@ def main(dry_run: bool = False):
     while not message_accepted:
         if generate_message:
             commit_message = get_commit_message()
+        if not commit_message:
+            print(f"{Fore.red}No commit message generated. Exiting.{Style.reset}")
+            sys.exit(1)
         for line in commit_message.splitlines():
             print(f"{Fore.yellow}{line}{Style.reset}")
         if dry_run:
