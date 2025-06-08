@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from pathlib import Path
 
 from loguru import logger
 from sh import ErrorReturnCode_1, ErrorReturnCode_128, git
@@ -41,3 +42,12 @@ def get_last_commit_messages(num: int) -> str:
 def show_diff():
     """Show the git diff."""
     subprocess.call("git diff --cached", shell=True)
+
+
+def get_git_project_root() -> Path:
+    """Get the root directory ofPath the git project."""
+    try:
+        return Path(git("rev-parse", "--show-toplevel").strip())
+    except ErrorReturnCode_128 as e:
+        logger.error("Error getting git project root")
+        raise RuntimeError("Unable to locate git project root. Are you in a git repository?") from e
