@@ -5,7 +5,7 @@ import sys
 from colored import Fore, Style
 from sh import ErrorReturnCode_1, pre_commit
 
-from git_ai.git import get_git_project_root
+from awesome_commit.git import get_git_project_root
 
 
 def has_pre_commit_config() -> bool:

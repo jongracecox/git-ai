@@ -9,16 +9,16 @@ from google.genai import types
 from loguru import logger
 from questionary import select
 
-from git_ai.editor import edit_text
-from git_ai.git import (
+from awesome_commit.editor import edit_text
+from awesome_commit.git import (
     commit_changes,
     get_git_changes,
     get_last_commit_messages,
     show_diff,
     git_has_staged_changes,
 )
-from git_ai.pre_commit import run_pre_commit
-from git_ai.config import GitAIConfig as config
+from awesome_commit.pre_commit import run_pre_commit
+from awesome_commit.config import AppConfig as config
 
 
 def get_prompt(context: dict) -> str:

@@ -1,4 +1,4 @@
-# Git CLI Helper
+# Awesome Commit - An AI Git Commit Helper
 
 ## Setup
 
@@ -27,7 +27,7 @@ To run the git commit CLI helper, run the following command:
 
 ```bash
 source .venv/bin/activate # Activate the virtual environment
-PYTHONPATH=src python -m git_ai # Run the git commit CLI helper
+PYTHONPATH=src python -m awesome_commit # Run the git commit CLI helper
 ```
 
 ## Integrate with Git
@@ -38,7 +38,7 @@ your `.gitconfig` file:
 ```text
 [alias]
         # Enable commit-ai
-        ai = "!PYTHONPATH=<path-to>/src <path-to>/git-cli/.venv/bin/python -m git_ai"
+        ai = "!PYTHONPATH=<path-to>/src <path-to>/git-cli/.venv/bin/python -m awesome_commit"
 ```
 
 Update the `<path-to>` with the path to the project directory.
@@ -47,4 +47,14 @@ Now, you can run the git commit CLI helper using the following command:
 
 ```bash
 git ai
+```
+
+## Building from source
+
+You can build the package from source with the following commands:
+
+```bash
+source .venv/bin/activate
+uv pip install build
+python -m build
 ```

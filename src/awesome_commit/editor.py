@@ -1,7 +1,7 @@
 import tempfile
 import subprocess
 
-from git_ai.config import GitAIConfig as config
+from awesome_commit.config import AppConfig as config
 
 
 def edit_file(file_path):
