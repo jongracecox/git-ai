@@ -27,7 +27,7 @@ To run the git commit CLI helper, run the following command:
 
 ```bash
 source .venv/bin/activate # Activate the virtual environment
-python src/git_ai.py # Run the git commit CLI helper
+PYTHONPATH=src python -m git_ai # Run the git commit CLI helper
 ```
 
 ## Integrate with Git
@@ -38,7 +38,7 @@ your `.gitconfig` file:
 ```text
 [alias]
         # Enable commit-ai
-        ai = "!<path-to>/git-cli/.venv/bin/python <path-to>/src/git_ai.py"
+        ai = "!PYTHONPATH=<path-to>/src <path-to>/git-cli/.venv/bin/python -m git_ai"
 ```
 
 Update the `<path-to>` with the path to the project directory.
