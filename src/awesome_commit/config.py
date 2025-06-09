@@ -13,8 +13,8 @@ class AppConfig:
     )
     DEFAULT_PROMPT_TEMPLATE: Path = PROMPTS_DIR / "generate_commit_message.txt.jinja2"
     GEMINI_API_KEY: str = config(f"{CONFIG_PREFIX}GEMINI_API_KEY")
-    PROMPT_TEMPLATE: Path = Path(
-        config(f"{CONFIG_PREFIX}PROMPT_TEMPLATE", default=str(DEFAULT_PROMPT_TEMPLATE))
+    PROMPT_TEMPLATE: str | None = config(
+        f"{CONFIG_PREFIX}PROMPT_TEMPLATE", default=None
     )
     NUM_PREVIOUS_COMMITS: int = config(
         f"{CONFIG_PREFIX}NUM_PREVIOUS_COMMITS", default=3, cast=int

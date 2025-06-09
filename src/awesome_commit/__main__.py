@@ -1,11 +1,10 @@
 import argparse
 import sys
 from enum import Enum
+import importlib.resources
+from pathlib import Path
 
-import jinja2
 from colored import Fore, Style
-from google import genai
-from google.genai import types
 from loguru import logger
 from questionary import select
 
@@ -16,9 +15,22 @@ from awesome_commit.git import (
     get_last_commit_messages,
     show_diff,
     git_has_staged_changes,
+    is_git_repository,
 )
 from awesome_commit.pre_commit import run_pre_commit
 from awesome_commit.config import AppConfig as config
+
+
+def get_embedded_prompt_template(name: str) -> str:
+    """Get the embedded Jinja template for the commit message prompt."""
+    full_name = f"{name}.txt.jinja2"
+    logger.debug(f"Loading embedded prompt template: {full_name}")
+    with (
+        importlib.resources.files("awesome_commit.prompts")
+        .joinpath(full_name)
+        .open("r")
+    ) as f:
+        return f.read()
 
 
 def get_prompt(context: dict) -> str:
@@ -28,11 +40,22 @@ def get_prompt(context: dict) -> str:
         context (dict): The context to render the template with.
     """
     jinja_template = config.PROMPT_TEMPLATE
-    if not jinja_template.exists():
-        raise FileNotFoundError(f"Prompt template not found: {jinja_template}")
 
-    with open(jinja_template, "r") as f:
-        template = jinja2.Template(f.read())
+    if jinja_template:
+        template_path = Path(jinja_template).expanduser().resolve()
+        logger.debug(f"Using Jinja template: {template_path}")
+        if not template_path.exists():
+            raise FileNotFoundError(f"Prompt template not found: {template_path}")
+        with open(template_path, "r") as f:
+            template_text = f.read()
+    else:
+        logger.debug("Using embedded Jinja template for commit message generation.")
+        template_text = get_embedded_prompt_template("generate_commit_message")
+
+    # Late import to avoid slow startup time
+    import jinja2
+
+    template = jinja2.Template(template_text)
 
     prompt = template.render(**context)
 
@@ -42,6 +65,11 @@ def get_prompt(context: dict) -> str:
 def get_commit_message():
     """Generate a commit message using the Gemini API."""
     print(f"{Fore.blue}Creating Gemini API client{Style.reset}")
+
+    # Late import to avoid slow startup time
+    from google import genai
+    from google.genai import types
+
     client = genai.Client(api_key=config.GEMINI_API_KEY)
 
     git_unified_diff = get_git_changes()
@@ -104,18 +132,37 @@ class UserChoice(Enum):
     QUIT = "Quit"
 
 
-def main(dry_run: bool = False):
-    """Main function."""
+def init_logging(enable_logging: bool = False, enable_debug: bool = False) -> None:
+    """Initialize logging configuration."""
+    if enable_logging or enable_debug:
+        if enable_debug:
+            logger.remove()
+            logger.add(sys.stderr, level="DEBUG")
+    else:
+        logger.remove()
+    logger.info("Logging initialized.")
 
-    print(f"{Fore.blue}Git AI{Style.reset}")
 
+def assert_is_git_repository():
+    """Assert that the current directory is a git repository."""
+    logger.debug("Checking if current directory is a git repository.")
+    if not is_git_repository():
+        print(f"{Fore.red}Not a git repository. Exiting.{Style.reset}")
+        sys.exit(1)
+    logger.debug("Current directory is a git repository.")
+
+
+def assert_staged_changes():
+    """Assert that there are staged changes in the git repository."""
+    logger.debug("Checking for staged changes.")
     if not git_has_staged_changes():
         print(f"{Fore.red}No staged changes found. Exiting.{Style.reset}")
         sys.exit(0)
+    logger.debug("Staged changes found.")
 
-    if config.RUN_PRE_COMMIT:
-        run_pre_commit()
 
+def generate_commit_message_loop(dry_run: bool = False):
+    """Loop to generate and handle the commit message."""
     message_accepted = False
     generate_message = True
 
@@ -156,6 +203,11 @@ def main(dry_run: bool = False):
             print(f"{Fore.blue}Exiting without committing changes.{Style.reset}")
             sys.exit(0)
 
+    return commit_message
+
+
+def commit_changes_to_git(commit_message: str, dry_run: bool = False):
+    """Commit changes to git with the generated commit message."""
     if dry_run:
         print(f"{Fore.blue}Dry run enabled. Skipping commit.{Style.reset}")
     else:
@@ -164,16 +216,25 @@ def main(dry_run: bool = False):
         print(f"{Fore.blue}Changes committed.{Style.reset}")
 
 
-if __name__ == "__main__":
+def main():
+    """Main function."""
+
     args = parse_args()
+    init_logging(enable_logging=args.logging, enable_debug=args.debug)
+    dry_run = args.dry_run
 
-    if args.logging:
-        if args.debug:
-            logger.remove()
-            logger.add(sys.stderr, level="DEBUG")
-    else:
-        logger.remove()
+    print(f"{Fore.blue}Git AI{Style.reset}")
 
-    main(dry_run=args.dry_run)
+    assert_is_git_repository()
+    assert_staged_changes()
 
-    logger.info("Done.")
+    if config.RUN_PRE_COMMIT:
+        logger.debug("Running pre-commit hooks.")
+        run_pre_commit()
+
+    commit_message = generate_commit_message_loop(dry_run=dry_run)
+    commit_changes_to_git(commit_message, dry_run=dry_run)
+
+
+if __name__ == "__main__":
+    main()

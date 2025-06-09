@@ -8,6 +8,15 @@ from sh import ErrorReturnCode_1, ErrorReturnCode_128, git
 git = git.bake("--no-pager")
 
 
+def is_git_repository() -> bool:
+    """Check if the current directory is a git repository."""
+    try:
+        git("status")
+        return True
+    except ErrorReturnCode_128:
+        return False
+
+
 def get_git_changes():
     """Get git staged changes."""
     logger.debug("Getting git staged changes")
