@@ -1,11 +1,12 @@
-import os
 import tempfile
 import subprocess
+
+from config import GitAIConfig as config
 
 
 def edit_file(file_path):
     """Edit a file using the default text editor."""
-    cmd = os.environ.get("EDITOR", "vi") + " " + file_path
+    cmd = config.COMMIT_EDITOR + " " + file_path
     subprocess.call(cmd, shell=True)
 
 

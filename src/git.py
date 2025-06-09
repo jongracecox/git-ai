@@ -25,10 +25,6 @@ def commit_changes(commit_message):
         sys.exit(1)
 
 
-def hello(a: str):
-    print(a)
-
-
 def get_last_commit_messages(num: int) -> str:
     """Get the last n commit messages."""
     logger.debug(f"Getting the last {num} commit messages")

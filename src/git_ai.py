@@ -1,11 +1,9 @@
 import argparse
 import sys
 from enum import Enum
-from pathlib import Path
 
 import jinja2
 from colored import Fore, Style
-from decouple import config
 from google import genai
 from google.genai import types
 from loguru import logger
@@ -21,24 +19,16 @@ from git import (
 )
 from pre_commit import run_pre_commit
 
-GEMINI_API_KEY = config("GEMINI_API_KEY")
-NUM_PREVIOUS_COMMITS = config("NUM_PREVIOUS_COMMITS", default=3, cast=int)
-SRC_DIR = Path(__file__).parent
-PROMPTS_DIR = Path(config("PROMPTS_DIR", default=str(SRC_DIR / "prompts")))
-RUN_PRE_COMMIT = config("RUN_PRE_COMMIT", default=True, cast=bool)
-
-# GEMINI_AI_MODEL = "gemini-2.0-flash"
-GEMINI_AI_MODEL = "gemini-2.5-flash-preview-04-17"
+from config import GitAIConfig as config
 
 
-def get_prompt(name: str, context: dict) -> str:
+def get_prompt(context: dict) -> str:
     """Generate a prompt using a Jinja template.
 
     Args:
-        name (str): The name of the prompt template file (without the extension).
         context (dict): The context to render the template with.
     """
-    jinja_template = PROMPTS_DIR / f"{name}.txt.jinja2"
+    jinja_template = config.PROMPT_TEMPLATE
     if not jinja_template.exists():
         raise FileNotFoundError(f"Prompt template not found: {jinja_template}")
 
@@ -53,19 +43,19 @@ def get_prompt(name: str, context: dict) -> str:
 def get_commit_message():
     """Generate a commit message using the Gemini API."""
     print(f"{Fore.blue}Creating Gemini API client{Style.reset}")
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=config.GEMINI_API_KEY)
 
     git_unified_diff = get_git_changes()
-    commit_messages = get_last_commit_messages(NUM_PREVIOUS_COMMITS)
+    commit_messages = get_last_commit_messages(config.NUM_PREVIOUS_COMMITS)
 
     context = {
         "commit_messages": commit_messages,
-        "num_previous_commits": NUM_PREVIOUS_COMMITS,
+        "num_previous_commits": config.NUM_PREVIOUS_COMMITS,
         "git_unified_diff": git_unified_diff,
     }
 
     print(f"{Fore.blue}Generating prompt...{Style.reset}")
-    prompt = get_prompt(name="generate_commit_message", context=context)
+    prompt = get_prompt(context=context)
 
     logger.debug("Prompt:")
     for line in prompt.splitlines():
@@ -73,7 +63,7 @@ def get_commit_message():
 
     print(f"{Fore.blue}Submitting prompt to Gemini API{Style.reset}")
     response = client.models.generate_content(
-        model=GEMINI_AI_MODEL,
+        model=config.AI_MODEL,
         config=types.GenerateContentConfig(
             system_instruction=("You are a technical writer for a software company " "and write succinctly."),
         ),
@@ -119,7 +109,7 @@ def main(dry_run: bool = False):
         print(f"{Fore.red}No staged changes found. Exiting.{Style.reset}")
         sys.exit(0)
 
-    if RUN_PRE_COMMIT:
+    if config.RUN_PRE_COMMIT:
         run_pre_commit()
 
     message_accepted = False
