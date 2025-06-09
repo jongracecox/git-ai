@@ -1,7 +1,7 @@
 import tempfile
 import subprocess
 
-from config import GitAIConfig as config
+from git_ai.config import GitAIConfig as config
 
 
 def edit_file(file_path):

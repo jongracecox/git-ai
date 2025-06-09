@@ -50,7 +50,9 @@ def git_has_staged_changes() -> bool:
         return True
     except ErrorReturnCode_128 as e:
         logger.error("Error checking for staged changes")
-        raise RuntimeError("Unable to check for staged changes. Are you in a git repository?") from e
+        raise RuntimeError(
+            "Unable to check for staged changes. Are you in a git repository?"
+        ) from e
 
 
 def get_git_project_root() -> Path:
@@ -59,4 +61,6 @@ def get_git_project_root() -> Path:
         return Path(git("rev-parse", "--show-toplevel").strip())
     except ErrorReturnCode_128 as e:
         logger.error("Error getting git project root")
-        raise RuntimeError("Unable to locate git project root. Are you in a git repository?") from e
+        raise RuntimeError(
+            "Unable to locate git project root. Are you in a git repository?"
+        ) from e
